@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <iostream>
+#include <strsafe.h>  // For safer string functions
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     static UINT newPressure = 0;
@@ -7,19 +8,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
     case WM_POINTERUPDATE:
     case WM_POINTERDOWN:
     case WM_POINTERUP: {
-        POINTER_PEN_INFO ppi = { 0 };
+        POINTER_PEN_INFO ppi;
+        ZeroMemory(&ppi, sizeof(POINTER_PEN_INFO));  // Ensures all fields are initialized to zero
         if (GetPointerPenInfo(GET_POINTERID_WPARAM(wParam), &ppi)) {
             newPressure = ppi.pressure;
             InvalidateRect(hWnd, NULL, TRUE);
         }
         break;
     }
-    case WM_PAINT: {
+    case WM_PAINT: {     
         PAINTSTRUCT ps;
         HDC hDC = BeginPaint(hWnd, &ps);
-        TCHAR szOutput[256];
-        wsprintf(szOutput, L"Pressure: %u", newPressure);
-        TextOut(hDC, 10, 10, szOutput, lstrlen(szOutput));
+        WCHAR szOutput[256];  // Use WCHAR instead of TCHAR
+        wsprintfW(szOutput, L"Pressure: %u", newPressure); // Explicitly use wsprintfW
+        TextOutW(hDC, 10, 10, szOutput, lstrlenW(szOutput)); // Use TextOutW for wide strings
         EndPaint(hWnd, &ps);
         break;
     }
@@ -38,7 +40,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow) {
     wc.lpfnWndProc = WndProc;
     wc.hInstance = hInstance;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW +1);
     wc.lpszClassName = L"PenPressureClass";
 
     RegisterClassW(&wc);
