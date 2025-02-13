@@ -49,7 +49,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow) {
         L"PenPressureClass",
         L"Pen Pressure",
         WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, 0, 300, 200,
+        CW_USEDEFAULT, 0, 500, 500,
         NULL, NULL, hInstance, NULL
     );
 
