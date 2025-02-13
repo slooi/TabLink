@@ -1,0 +1,4 @@
+pywin32==308
+tk==0.1.0
+types-pywin32==308.0.0.20250128
+websockets==14.2
