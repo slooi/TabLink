@@ -5,6 +5,8 @@ g++ -Wall -Wextra -g3 client.cpp -o client.exe -lws2_32 && g++ -Wall -Wextra -g3
 
 g++ -Wall -Wextra -g3 pressureReader.cpp -o pressureReader.exe -lgdi32 -municode
 
+g++ -Wall -Wextra -g3 pressureClient.cpp -o pressureClient.exe -lws2_32 -lgdi32 -municode
+
 InputInjector.InjectPenInput
 
 Realtimestylus API
