@@ -63,6 +63,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow) {
+    // Set process priority to real-time
+    if (!SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS)) {
+        std::cerr << "Failed to set real-time priority: " << GetLastError() << std::endl;
+    }
+
+    // Set main thread priority to highest real-time level
+    if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL)) {
+        std::cerr << "Failed to set thread priority: " << GetLastError() << std::endl;
+    }
+
     WSADATA wsData;
     WSAStartup(MAKEWORD(2, 2), &wsData);
     clientSocket = socket(AF_INET, SOCK_STREAM, 0);
