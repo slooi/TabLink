@@ -7,21 +7,30 @@
 #include <string>
 #include <chrono>
 #include <thread>
-
+#include <random>  // For random number generation
 #pragma comment(lib, "ws2_32.lib")
 
 SOCKET clientSocket;
 bool connected = false;
-
 void sendData(UINT pressure, int x, int y, int tiltX, int tiltY) {
     if (!connected) return;
-    
-    std::string message = std::to_string(x)+ "\n"; //"Pressure: " + std::to_string(pressure) + 
-                          //", Position: (" + std::to_string(x) + ", " + std::to_string(y) + ")" +
-                          //", Tilt: (" + std::to_string(tiltX) + ", " + std::to_string(tiltY) + ")";
+
+    std::string message = std::to_string(x) + " " + std::to_string(y) + " " +
+                          std::to_string(pressure) + " " +
+                          std::to_string(tiltX) + " " + std::to_string(tiltY) + "\n";
+
+    // Introduce a 5% chance of a 5ms delay
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    static std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+    // if (dist(gen) < 0.05) {  // 5% chance
+    //     std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    // }
+
+    send(clientSocket, message.c_str(), static_cast<int>(message.size()), 0);
+
     std::cout << message << std::endl;
-    send(clientSocket, message.c_str(), static_cast<int>(message.size() ), 0);
-    std::this_thread::sleep_for(std::chrono::milliseconds(0));
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -63,7 +72,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow) {
     serverHint.sin_port = htons(SERVER_PORT);
     inet_pton(AF_INET, SERVER_IP, &serverHint.sin_addr);
 
-    
     if (connect(clientSocket, (sockaddr*)&serverHint, sizeof(serverHint)) != SOCKET_ERROR) {    
         int flag = 1;
         setsockopt(clientSocket, IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(int));
@@ -74,7 +82,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow) {
     WNDCLASSW wc = {};
     wc.lpfnWndProc = WndProc;
     wc.hInstance = hInstance;
-    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW +1);
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wc.lpszClassName = L"PenPressureClass";
     RegisterClassW(&wc);
 
