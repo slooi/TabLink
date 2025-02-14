@@ -23,3 +23,5 @@ https://stackoverflow.com/questions/67648316/windows-cpp-injectsyntheticpointeri
 "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
 
 cl /EHsc /std:c++17 simulate.cpp /link User32.lib
+
+cl /EHsc /std:c++17 /Fe:server.exe server.cpp /link User32.lib Ws2_32.lib

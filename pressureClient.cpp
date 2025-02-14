@@ -1,10 +1,12 @@
-#define SERVER_IP "127.0.0.1"
+#define SERVER_IP "192.168.1.12"
 #define SERVER_PORT 54000
 
 #include <windows.h>
 #include <WS2tcpip.h>
 #include <iostream>
 #include <string>
+#include <chrono>
+#include <thread>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -14,10 +16,12 @@ bool connected = false;
 void sendData(UINT pressure, int x, int y, int tiltX, int tiltY) {
     if (!connected) return;
     
-    std::string message = "Pressure: " + std::to_string(pressure) + 
-                          ", Position: (" + std::to_string(x) + ", " + std::to_string(y) + ")" +
-                          ", Tilt: (" + std::to_string(tiltX) + ", " + std::to_string(tiltY) + ")";
-    send(clientSocket, message.c_str(), static_cast<int>(message.size() + 1), 0);
+    std::string message = std::to_string(x)+ "\n"; //"Pressure: " + std::to_string(pressure) + 
+                          //", Position: (" + std::to_string(x) + ", " + std::to_string(y) + ")" +
+                          //", Tilt: (" + std::to_string(tiltX) + ", " + std::to_string(tiltY) + ")";
+    std::cout << message << std::endl;
+    send(clientSocket, message.c_str(), static_cast<int>(message.size() ), 0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(0));
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -58,8 +62,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow) {
     serverHint.sin_family = AF_INET;
     serverHint.sin_port = htons(SERVER_PORT);
     inet_pton(AF_INET, SERVER_IP, &serverHint.sin_addr);
+
     
-    if (connect(clientSocket, (sockaddr*)&serverHint, sizeof(serverHint)) != SOCKET_ERROR) {
+    if (connect(clientSocket, (sockaddr*)&serverHint, sizeof(serverHint)) != SOCKET_ERROR) {    
+        int flag = 1;
+        setsockopt(clientSocket, IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(int));
         connected = true;
         std::cout << "Connected to server!" << std::endl;
     }
