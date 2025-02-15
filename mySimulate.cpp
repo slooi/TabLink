@@ -27,11 +27,9 @@ int main() {
     SOCKET clientSocket = accept(serverSocket, (sockaddr*)&client, &clientSize);
     std::cout << "Client connected!" << std::endl;
 
-    // Get screen dimensions
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
-    // Create synthetic pointer device
     HSYNTHETICPOINTERDEVICE pointer = CreateSyntheticPointerDevice(PT_PEN, 1, POINTER_FEEDBACK_INDIRECT);
     if (!pointer) {
         std::cerr << "Error creating synthetic pointer: " << GetLastError() << std::endl;
@@ -42,14 +40,9 @@ int main() {
     inputInfo[0].type = PT_PEN;
     inputInfo[0].penInfo.pointerInfo.pointerType = PT_PEN;
     inputInfo[0].penInfo.pointerInfo.pointerId = 0;
-    inputInfo[0].penInfo.pointerInfo.frameId = 0;
-    inputInfo[0].penInfo.pointerInfo.pointerFlags = POINTER_FLAG_INRANGE | POINTER_FLAG_INCONTACT | POINTER_FLAG_DOWN;
     inputInfo[0].penInfo.penMask = PEN_MASK_PRESSURE | PEN_MASK_TILT_X | PEN_MASK_TILT_Y;
     inputInfo[0].penInfo.pointerInfo.dwTime = 0; //!@# required
     inputInfo[0].penInfo.pointerInfo.PerformanceCount = 0; //!@# required
-    inputInfo[0].penInfo.tiltX = 0;
-    inputInfo[0].penInfo.tiltY = 0;
-    inputInfo[0].penInfo.pressure = 1024;
 
     std::string inputBuffer;
     char buffer[64];
@@ -58,27 +51,35 @@ int main() {
         int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
         if (bytesReceived > 0) {
             buffer[bytesReceived] = '\0';
-            inputBuffer += buffer; // Append to buffer
-    
-            // Process full lines
+            inputBuffer += buffer;
+
             size_t pos;
             while ((pos = inputBuffer.find('\n')) != std::string::npos) {
                 std::string line = inputBuffer.substr(0, pos);
-                inputBuffer.erase(0, pos + 1); // Remove processed part
-    
+                inputBuffer.erase(0, pos + 1);
+
                 std::istringstream iss(line);
                 int x, y, pressure, tiltX, tiltY;
-                if (iss >> x >> y >> pressure >> tiltX >> tiltY) {
-                    // Process valid input
+                char eventType;
+                if (iss >> x >> y >> pressure >> tiltX >> tiltY >> eventType) {
                     inputInfo[0].penInfo.pointerInfo.ptPixelLocation.x = x;
                     inputInfo[0].penInfo.pointerInfo.ptPixelLocation.y = y;
                     inputInfo[0].penInfo.pressure = pressure;
                     inputInfo[0].penInfo.tiltX = tiltX;
                     inputInfo[0].penInfo.tiltY = tiltY;
-    
+
+                    if (eventType == 'D') {
+                        inputInfo[0].penInfo.pointerInfo.pointerFlags = POINTER_FLAG_INRANGE | POINTER_FLAG_INCONTACT | POINTER_FLAG_DOWN;
+                    } else if (eventType == 'U') {
+                        inputInfo[0].penInfo.pointerInfo.pointerFlags = POINTER_FLAG_UP;
+                    } else {
+                        inputInfo[0].penInfo.pointerInfo.pointerFlags = POINTER_FLAG_UPDATE | POINTER_FLAG_INRANGE | POINTER_FLAG_INCONTACT;
+                    }
+
                     if (!InjectSyntheticPointerInput(pointer, inputInfo, 1)) {
                         std::cerr << "Error injecting input: " << GetLastError() << std::endl;
                     }
+
                     std::cout << "Received: " << line << "\n";
                 } else {
                     std::cerr << "Invalid data format: " << line << std::endl;
@@ -86,7 +87,7 @@ int main() {
             }
         }
     }
-    // Cleanup
+
     DestroySyntheticPointerDevice(pointer);
     closesocket(clientSocket);
     closesocket(serverSocket);
